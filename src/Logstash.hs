@@ -7,6 +7,8 @@
 
 -- | A simple Logstash client.
 module Logstash (
+    module Logstash.Connection,
+    
     runLogstashConn,
     runLogstashPool,
     stash, 
