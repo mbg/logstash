@@ -45,11 +45,9 @@ import Logstash.Connection
 -- `True` if the message was sent successfully.
 stash 
     :: MonadIO m 
-    => Int
-    -> BSL.ByteString 
-    -> ReaderT LogstashConnection m Bool
-stash secs msg = ask >>= \con -> liftIO $ isRight <$>
-    race (threadDelay (secs*1000000)) (writeData con msg) 
+    => BSL.ByteString 
+    -> ReaderT LogstashConnection m ()
+stash msg = ask >>= \con -> liftIO $ writeData con msg
 
 -- | `stashJsonLine` @timeout document@ is a computation which serialises
 -- @document@ and sends it to the Logstash server. This function is intended
@@ -58,10 +56,9 @@ stash secs msg = ask >>= \con -> liftIO $ isRight <$>
 -- `True` if the message was sent successfully.
 stashJsonLine 
     :: (MonadIO m, ToJSON a) 
-    => Int 
-    -> a 
-    -> ReaderT LogstashConnection m Bool
-stashJsonLine secs = stash secs . (<> "\n") . encode
+    => a 
+    -> ReaderT LogstashConnection m ()
+stashJsonLine = stash . (<> "\n") . encode
 
 --------------------------------------------------------------------------------
 
