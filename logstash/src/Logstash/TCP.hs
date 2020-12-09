@@ -96,7 +96,7 @@ logstashTcpPool
     -> Int 
     -> NominalDiffTime
     -> Int 
-    -> IO (Pool LogstashConnection)
+    -> IO LogstashPool
 logstashTcpPool cfg = createPool (createTcpConnection cfg) closeConnection
 
 --------------------------------------------------------------------------------
@@ -143,7 +143,7 @@ logstashTlsPool
     -> Int 
     -> NominalDiffTime
     -> Int
-    -> IO (Pool LogstashConnection)
+    -> IO LogstashPool
 logstashTlsPool cfg params = 
     createPool (createTlsConnection cfg params) closeConnection 
 

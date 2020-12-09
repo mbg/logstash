@@ -6,12 +6,14 @@
 --------------------------------------------------------------------------------
 
 module Logstash.Connection (
-    LogstashConnection(..)
+    LogstashConnection(..),
+    LogstashPool
 ) where
 
 --------------------------------------------------------------------------------
 
 import qualified Data.ByteString.Lazy as BSL
+import Data.Pool
 
 --------------------------------------------------------------------------------
 
@@ -23,5 +25,9 @@ data LogstashConnection = LogstashConnection {
     -- | A computation which closes the connection.
     closeConnection :: IO ()
 }
+
+-- | For convenience so that importing modules do not have to import 
+-- `Data.Pool`, a type alias for a `Pool` of `LogstashConnection`.
+type LogstashPool = Pool LogstashConnection
 
 --------------------------------------------------------------------------------
