@@ -25,19 +25,21 @@ dependencies:
 - base >= 4.7 && < 5
 - bytestring
 - data-default-class
-- mtl
 - monad-control
+- mtl
 - network
+- resource-pool
+- resourcet
+- retry
 - time
 - tls
-- resourcet
-- resource-pool
 - unliftio
 
 default-extensions:
 - OverloadedStrings
 - RecordWildCards
 - FlexibleContexts
+- FlexibleInstances
 
 library:
   source-dirs: src
