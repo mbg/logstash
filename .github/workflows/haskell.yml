@@ -8,6 +8,8 @@ on:
     paths:
       - 'logstash/src/**'
       - 'logstash/package.yaml'
+      - 'monad-logger-logstash/src/**'
+      - 'monad-logger-logstash/package.yaml'
       - 'stack*.yaml'
   pull_request:
     branches: [master]
