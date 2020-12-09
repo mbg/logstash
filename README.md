@@ -4,7 +4,7 @@
 ![CI](https://github.com/mbg/logstash/workflows/Build/badge.svg?branch=master)
 ![stackage-nightly](https://github.com/mbg/logstash/workflows/stackage-nightly/badge.svg)
 
-This library implements a client for Logstash in Haskell. For example, to connect to a Logstash server via TCP at `127.0.0.1:5000` (configuration given by `def`) and send a JSON document:
+This library implements a client for Logstash in Haskell. For example, to connect to a Logstash server via TCP at `127.0.0.1:5000` (configuration given by `def`) and send a JSON document with a timeout of 1s:
 
 ```haskell
 data Doc = Doc String
@@ -13,7 +13,7 @@ instance ToJSON Doc where
     toJSON (Doc msg) = object [ "message" .= msg ]
 
 main :: IO ()
-main = runLogstashConn (logstashTcp def) $
+main = runLogstashConn (logstashTcp def) 1000000 $
     stashJsonLine (Doc "Hello World")
 ```
 
@@ -60,7 +60,7 @@ main :: IO ()
 main = do 
     params <- newDefaultClientParams ("127.0.0.1", "")
 
-    runLogstashConn (logstashTls def params) $ 
+    runLogstashConn (logstashTls def params) 1000000 $ 
         stashJsonLine myDocument
 ```
 
@@ -93,7 +93,7 @@ main = do
     -- repeatedly do so until successful (not recommended for a real
     -- application!)
     let logIt = do 
-            success <- runLogstashPool pool (stashJsonLine myDocument)
+            success <- runLogstashPool pool 1000000 (stashJsonLine myDocument)
                 `catchException` \(e :: SomeException) -> pure False 
 
             unless success logIt

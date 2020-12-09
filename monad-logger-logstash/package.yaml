@@ -27,7 +27,6 @@ dependencies:
 - retry
 - text
 - transformers
-- unbounded-delays
 
 default-extensions:
 - RecordWildCards

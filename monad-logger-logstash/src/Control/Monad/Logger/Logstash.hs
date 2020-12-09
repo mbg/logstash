@@ -43,7 +43,6 @@
 -- attempted again. If all attempts fail, the most recent exception is thrown
 -- to the caller.
 module Control.Monad.Logger.Logstash (
-    LogstashTimeout,
     runLogstashLoggerT,
     stashJsonLine,
 
@@ -54,8 +53,6 @@ module Control.Monad.Logger.Logstash (
 --------------------------------------------------------------------------------
 
 import Control.Concurrent
-import Control.Concurrent.Timeout
-import Control.Exception
 import Control.Monad
 import Control.Monad.Logger
 import Control.Monad.Trans.Reader
@@ -70,13 +67,6 @@ import Logstash hiding (stashJsonLine)
 import qualified Logstash as L (stashJsonLine)
 
 --------------------------------------------------------------------------------
-
--- | An exception that is raised when writing to Logstash times out.
-data LogstashTimeout = MkLogstashTimeout
-    deriving (Eq, Show) 
-
-instance Exception LogstashTimeout where 
-    displayException _ = "Writing to Logstash timed out."
 
 -- | `runLogstashLoggerT` @context retryPolicy time codec logger@ runs a 
 -- `LoggingT` computation which writes all log entries to the Logstash 
@@ -97,13 +87,7 @@ runLogstashLoggerT
     -> m a
 runLogstashLoggerT ctx policy time codec log = runLoggingT log $ 
     \logLoc logSource logLevel logStr -> recoverAll policy $ 
-    \s -> do 
-        -- run the Logstash action with the specified timeout
-        mr <- timeout time $ runLogstash ctx $ 
-            codec s (logLoc, logSource, logLevel, logStr)
-        
-        -- check whether a timeout 
-        maybe (throw MkLogstashTimeout) pure mr
+    \s -> runLogstash ctx time $ codec s (logLoc, logSource, logLevel, logStr)
 
 --------------------------------------------------------------------------------
 

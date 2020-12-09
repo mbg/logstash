@@ -23,6 +23,7 @@ module Logstash (
 
 import Control.Concurrent
 import Control.Concurrent.Async
+import Control.Concurrent.Timeout
 import Control.Exception
 import Control.Monad.Reader
 import Control.Monad.Trans.Control
@@ -62,11 +63,19 @@ stashJsonLine = stash . (<> "\n") . encode
 
 --------------------------------------------------------------------------------
 
+-- | A type of exceptions that can occur related to Logstash connections.
+data LogstashException = LogstashTimeout
+    deriving (Eq, Show) 
+
+instance Exception LogstashException where 
+    displayException _ = "Writing to Logstash timed out."
+
 -- | A type class of types that provide Logstash connections.
 class LogstashContext ctx where 
     runLogstash 
         :: MonadUnliftIO m 
         => ctx 
+        -> Integer
         -> ReaderT LogstashConnection m a 
         -> m a
 
@@ -80,24 +89,35 @@ instance LogstashContext LogstashPool where
 -- a Logstash connection produced by @connectionAcquire@.
 runLogstashConn 
     :: MonadUnliftIO m 
-    => Acquire LogstashConnection 
+    => Acquire LogstashConnection
+    -> Integer 
     -> ReaderT LogstashConnection m a 
     -> m a 
-runLogstashConn acq action = withAcquire acq (runReaderT action)
+runLogstashConn acq time action = withRunInIO $ \runInIO -> do 
+    -- run the Logstash action with the specified timeout
+    mr <- timeout time $ runInIO $ withAcquire acq $ runReaderT action
+    
+    -- raise an exception if a timeout occurred
+    maybe (throw LogstashTimeout) pure mr
 
 -- | `runLogstashPool` @pool computation@ takes a `LogstashConnection` from
 -- @pool@ and runs @computation@ with it.
 runLogstashPool 
     :: MonadUnliftIO m 
     => Pool LogstashConnection 
+    -> Integer
     -> ReaderT LogstashConnection m a
     -> m a
-runLogstashPool pool action = 
+runLogstashPool pool time action = 
     withRunInIO $ \runInIO -> 
     mask $ \restore -> do
+        -- acquire a connection from the resource pool
         (resource, local) <- takeResource pool
-        r <- restore (runInIO $ runReaderT action resource) `onException` 
-                destroyResource pool local resource
-        pure r
+
+        mr <- restore (timeout time $ runInIO $ runReaderT action resource) 
+            `onException` destroyResource pool local resource
+
+        -- raise an exception if a timeout occurred
+        maybe (throw LogstashTimeout) pure mr
 
 --------------------------------------------------------------------------------

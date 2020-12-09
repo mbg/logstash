@@ -33,6 +33,7 @@ dependencies:
 - retry
 - time
 - tls
+- unbounded-delays
 - unliftio
 
 default-extensions:
