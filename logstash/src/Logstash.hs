@@ -9,17 +9,21 @@
 module Logstash (
     module Logstash.Connection,
     
+    -- * Running Logstash actions
+    LogstashContext(..),
     runLogstashConn,
     runLogstashPool,
+
+    -- * Codecs
     stash, 
-    stashJsonLine, 
-    retry
+    stashJsonLine
 ) where 
 
 --------------------------------------------------------------------------------
 
 import Control.Concurrent
 import Control.Concurrent.Async
+import Control.Exception
 import Control.Monad.Reader
 import Control.Monad.Trans.Control
 
@@ -29,7 +33,7 @@ import qualified Data.ByteString.Lazy as BSL
 import Data.Either (isRight)
 import Data.Pool
 
-import UnliftIO (MonadUnliftIO)
+import UnliftIO (MonadUnliftIO(..))
 
 import Logstash.Connection
 
@@ -59,24 +63,21 @@ stashJsonLine
     -> ReaderT LogstashConnection m Bool
 stashJsonLine secs = stash secs . (<> "\n") . encode
 
--- | `retry` @attempts action@ will attempt @action@ up to @attempts@-many
--- times until it returns `True`. If @action@ does not succeed within
--- @attempts@ attempts, `False` is returned.
-retry 
-    :: Monad m 
-    => Int
-    -> ReaderT LogstashConnection m Bool 
-    -> ReaderT LogstashConnection m Bool
-retry n action 
-    | n <= 0 = pure False 
-    | otherwise = do 
-        r <- action 
-
-        if r 
-        then pure True 
-        else retry (n-1) action
-
 --------------------------------------------------------------------------------
+
+-- | A type class of types that provide Logstash connections.
+class LogstashContext ctx where 
+    runLogstash 
+        :: MonadUnliftIO m 
+        => ctx 
+        -> ReaderT LogstashConnection m a 
+        -> m a
+
+instance LogstashContext (Acquire LogstashConnection) where 
+    runLogstash = runLogstashConn
+
+instance LogstashContext LogstashPool where
+    runLogstash = runLogstashPool
 
 -- | `runLogstashConn` @connectionAcquire computation@ runs @computation@ using
 -- a Logstash connection produced by @connectionAcquire@.
@@ -90,10 +91,16 @@ runLogstashConn acq action = withAcquire acq (runReaderT action)
 -- | `runLogstashPool` @pool computation@ takes a `LogstashConnection` from
 -- @pool@ and runs @computation@ with it.
 runLogstashPool 
-    :: MonadBaseControl IO m 
+    :: MonadUnliftIO m 
     => Pool LogstashConnection 
     -> ReaderT LogstashConnection m a
     -> m a
-runLogstashPool pool action = withResource pool (runReaderT action)
+runLogstashPool pool action = 
+    withRunInIO $ \runInIO -> 
+    mask $ \restore -> do
+        (resource, local) <- takeResource pool
+        r <- restore (runInIO $ runReaderT action resource) `onException` 
+                destroyResource pool local resource
+        pure r
 
 --------------------------------------------------------------------------------
