@@ -2,6 +2,7 @@
 
 ![MIT](https://img.shields.io/github/license/mbg/logstash)
 ![CI](https://github.com/mbg/logstash/workflows/Build/badge.svg?branch=master)
+![stackage-nightly](https://github.com/mbg/logstash/workflows/stackage-nightly/badge.svg)
 
 This library implements a client for Logstash in Haskell. For example, to connect to a Logstash server via TCP at `127.0.0.1:5000` (configuration given by `def`) and send a JSON document with a timeout of 30s:
 
