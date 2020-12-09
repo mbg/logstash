@@ -6,6 +6,7 @@ on:
     tags:
       - 'v*'
     paths:
+      - '.github/workflows/**'
       - 'logstash/src/**'
       - 'logstash/package.yaml'
       - 'monad-logger-logstash/src/**'
