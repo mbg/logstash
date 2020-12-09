@@ -5,6 +5,10 @@ on:
     branches: [master]
     tags:
       - 'v*'
+    paths:
+      - 'logstash/src/**'
+      - 'logstash/package.yaml'
+      - 'stack*.yaml'
   pull_request:
     branches: [master]
   
