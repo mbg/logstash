@@ -2,3 +2,4 @@ resolver: lts-16.1
 
 packages:
 - ./logstash
+- ./monad-logger-logstash
