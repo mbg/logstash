@@ -1,0 +1,11 @@
+cradle:
+  stack:
+    - path: './logstash/src'
+      component: 'logstash:lib'
+    - path: './monad-logger-logstash/src'
+      component: 'monad-logger-logstash:lib'
+
+dependencies:
+- stack.yaml
+- ./logstash/package.yaml
+- ./monad-logger-logstash/package.yaml
