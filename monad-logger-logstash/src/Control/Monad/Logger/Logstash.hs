@@ -86,8 +86,8 @@ runLogstashLoggerT
     -> LoggingT m a 
     -> m a
 runLogstashLoggerT ctx policy time codec log = runLoggingT log $ 
-    \logLoc logSource logLevel logStr -> recoverAll policy $ 
-    \s -> runLogstash ctx time $ codec s (logLoc, logSource, logLevel, logStr)
+    \logLoc logSource logLevel logStr -> runLogstash ctx policy time $ 
+    \s -> codec s (logLoc, logSource, logLevel, logStr)
 
 --------------------------------------------------------------------------------
 

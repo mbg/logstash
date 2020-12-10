@@ -25,8 +25,10 @@ import Control.Concurrent
 import Control.Concurrent.Async
 import Control.Concurrent.Timeout
 import Control.Exception
+import Control.Monad.Catch (MonadMask)
 import Control.Monad.Reader
 import Control.Monad.Trans.Control
+import Control.Retry
 
 import Data.Aeson
 import Data.Acquire
@@ -73,10 +75,11 @@ instance Exception LogstashException where
 -- | A type class of types that provide Logstash connections.
 class LogstashContext ctx where 
     runLogstash 
-        :: MonadUnliftIO m 
+        :: (MonadMask m, MonadUnliftIO m) 
         => ctx 
+        -> RetryPolicyM m
         -> Integer
-        -> ReaderT LogstashConnection m a 
+        -> (RetryStatus -> ReaderT LogstashConnection m a) 
         -> m a
 
 instance LogstashContext (Acquire LogstashConnection) where 
@@ -88,14 +91,17 @@ instance LogstashContext LogstashPool where
 -- | `runLogstashConn` @connectionAcquire computation@ runs @computation@ using
 -- a Logstash connection produced by @connectionAcquire@.
 runLogstashConn 
-    :: MonadUnliftIO m 
+    :: (MonadMask m, MonadUnliftIO m)
     => Acquire LogstashConnection
+    -> RetryPolicyM m
     -> Integer 
-    -> ReaderT LogstashConnection m a 
+    -> (RetryStatus -> ReaderT LogstashConnection m a) 
     -> m a 
-runLogstashConn acq time action = withRunInIO $ \runInIO -> do 
+runLogstashConn acq policy time action = 
+    recoverAll policy $ \s -> 
+    withRunInIO $ \runInIO -> do 
     -- run the Logstash action with the specified timeout
-    mr <- timeout time $ runInIO $ withAcquire acq $ runReaderT action
+    mr <- timeout time $ runInIO $ withAcquire acq $ runReaderT (action s)
     
     -- raise an exception if a timeout occurred
     maybe (throw LogstashTimeout) pure mr
@@ -103,18 +109,20 @@ runLogstashConn acq time action = withRunInIO $ \runInIO -> do
 -- | `runLogstashPool` @pool computation@ takes a `LogstashConnection` from
 -- @pool@ and runs @computation@ with it.
 runLogstashPool 
-    :: MonadUnliftIO m 
+    :: (MonadMask m, MonadUnliftIO m) 
     => Pool LogstashConnection 
+    -> RetryPolicyM m
     -> Integer
-    -> ReaderT LogstashConnection m a
+    -> (RetryStatus -> ReaderT LogstashConnection m a)
     -> m a
-runLogstashPool pool time action = 
+runLogstashPool pool policy time action =
+    recoverAll policy $ \s -> 
     withRunInIO $ \runInIO -> 
     mask $ \restore -> do
         -- acquire a connection from the resource pool
         (resource, local) <- takeResource pool
 
-        mr <- restore (timeout time $ runInIO $ runReaderT action resource) 
+        mr <- restore (timeout time $ runInIO $ runReaderT (action s) resource) 
             `onException` destroyResource pool local resource
 
         -- raise an exception if a timeout occurred
