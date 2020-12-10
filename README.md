@@ -9,8 +9,9 @@ This library implements a client for Logstash in Haskell. The following features
 - Connections to Logstash via TCP or TLS (`tcp` input type).
 - Support for the `json_lines` codec out of the box and custom codecs can be implemented (arbitrary `ByteString` data can be sent across the connections).
 - This library can either be used without any logging framework or as a backend for [`monad-logger`](http://hackage.haskell.org/package/monad-logger/).
+- Log messages can either be written synchronously or asynchronously.
 
-For example, to connect to a Logstash server via TCP at `127.0.0.1:5000` (configuration given by `def`) and send a JSON document with a timeout of 1s and the default retry policy from [`Control.Retry`](https://hackage.haskell.org/package/retry/docs/Control-Retry.html):
+For example, to connect to a Logstash server via TCP at `127.0.0.1:5000` (configuration given by `def`) and send a JSON document synchronously with a timeout of 1s and the default retry policy from [`Control.Retry`](https://hackage.haskell.org/package/retry/docs/Control-Retry.html):
 
 ```haskell
 data Doc = Doc String
@@ -72,37 +73,82 @@ main = do
 
 ## Logging things
 
-The `Logstash` module exports backend-independent logging functions that can be invoked with `runLogstash`, which is overloaded to work with either `Acquire LogstashConnection` or `LogstashPool` (`Pool LogstashConnection`) values and maps to one of the two implementations described below. In either case, users must supply a retry policy and a timeout (in microseconds). The retry policy determines whether performing the logging action should be re-attempted if an exception occurs. The order of operations is:
+The `Logstash` module exports functions for synchronous and asynchronous logging. Synchronous logging is acceptable for applications or parts of applications that are largely single-threaded where blocking on writes to Logstash is not an issue. For multi-threaded applications, such as web applications or services, you may wish to write log messages to Logstash asynchronously instead. In the latter model, log messages are added to a bounded queue which is processed asynchronously by worker threads. 
+
+### Synchronously
+
+The logging functions exported by the `Logstash` module are backend-independent can be invoked synchronously with `runLogstash`, which is overloaded to work with either `Acquire LogstashConnection` or `LogstashPool` (`Pool LogstashConnection`) values and maps to one of the two implementations described below. In either case, you must supply a retry policy and a timeout (in microseconds). The retry policy determines whether performing the logging action should be re-attempted if an exception occurs. The order of operations is:
 
 1. The retry policy is applied.
 2. A connection is established using the provided Logstash context.
 3. The timeout is applied.
 4. The Logstash computation is executed.
 
-If the computation is successful, each step will only be executed once. If an exception is raised by the computation or the timeout, the connection to the Logstash server is terminated and the exception propagated to the retry policy. If the retry policy determines that the computation should be re-attempted, steps 2-4 will happen again.
+If the computation is successful, each step will only be executed once. If an exception is raised by the computation or the timeout, the connection to the Logstash server is terminated and the exception propagated to the retry policy. If the retry policy determines that the computation should be re-attempted, steps 2-4 will happen again. The timeout applies to every attempt individually and should be chosen appropriately in conjunction with the retry policy in mind.
 
 Depending on whether the Logstash context is a `Acquire LogstashConnection` value or a `LogstashPool` (`Pool LogstashConnection`) value, the `runLogstash` functions maps to one of:
 
 - `runLogstashConn` for `Acquire LogstashConnection` (e.g. the result of `logstashTcp` or `logstashTls`).
 - `runLogstashPool` for `Pool LogstashConnection` (e.g. the result of `logstashTcpPool` or `logstashTlsPool`). If a connection is available in the pool, that connection will be used. If no connection is available but there is an empty space in the pool, a new connection will be established. If neither is true, this function blocks until a connection is available. The computation that is provided as the second argument is then run with the connection. In the event of an exception, the connection is not returned to the pool.
 
-### Stashing things by hand
+#### Stashing things by hand
 
-The following functions allow sending data via the Logstash connection:
+The following functions allow sending data synchronously via the Logstash connection:
 
 - `stash` is a general-purpose function for sending `ByteString` data to the server. No further processing is performed on the data.
 - `stashJsonLine` is for use with the `json_line` codec. The argument is encoded as JSON and a `\n` character is appended, which is then sent to the server. 
 
 Any exception raised by the above `stash`ing functions will likely be due to a bad connection. The `runLogstash` functions apply the retry policy before establishing a connection, so in the event that an exception is raised, a new connection will be established for the next attempt.
 
+### Asynchronously
+
+The `withLogstashQueue` function is used for asynchronous logging. When called, it sets up a bounded queue that is then used to communicate log messages to worker threads which dispatch them to Logstash. A minimal example with default settings is shown below:
+
+```haskell
+data Doc = Doc String
+
+instance ToJSON Doc where
+    toJSON (Doc msg) = object [ "message" .= msg ]
+
+main :: IO ()
+main = do
+    let ctx = logstashTcp def
+    let cfg = defaultLogstashQueueCfg ctx
+    
+    withLogstashQueue cfg (const stashJsonLine) [] $ \queue -> do
+        atomically $ writeTBMQueue queue (Doc "Hello World")
+```
+
+The `[]` given to `withLogstashQueue` allows installing exception handlers that are used to handle the case where a log message has exhausted the retry policy. This can e.g. be used to fall back to the standard output for logging as a last resort and to stop the worker thread from getting terminated by an exception that may be recoverable.
+
+The queue is automatically closed when the inner computation returns. The worker threads will continue running until the queue is empty and then terminate. `withLogstashQueue` will not return until all worker threads have returned.
+
 ### Usage with `monad-logger`
 
-The `monad-logger-logstash` package provides convenience functions and types for working with [`monad-logger`](http://hackage.haskell.org/package/monad-logger/). The following example demonstrates how to use the `runLogstashLoggerT` function with a TCP connection to Logstash, the default retry policy from [`Control.Retry`](https://hackage.haskell.org/package/retry/docs/Control-Retry.html), a 1s timeout for each attempt, and the `json_lines` codec:
+The `monad-logger-logstash` package provides convenience functions and types for working with [`monad-logger`](http://hackage.haskell.org/package/monad-logger/). 
+
+#### Synchronous logging
+
+The following example demonstrates how to use the `runLogstashLoggerT` function with a TCP connection to Logstash, the default retry policy from [`Control.Retry`](https://hackage.haskell.org/package/retry/docs/Control-Retry.html), a 1s timeout for each attempt, and the `json_lines` codec:
 
 ```haskell
 main :: IO ()
 main = do 
     let ctx = logstashTcp def
     runLogstashLoggerT ctx retryPolicyDefault 1000000 (const stashJsonLine) $ 
+        logInfoN "Hello World"
+```
+
+Each call to a logging function such as `logInfoN` in the example will result in the log message being written to Logstash synchronously. 
+
+#### Asynchronous logging
+
+The `withLogstashLoggerT` function is the analogue of `withLogstashQueue` for `monad-logger`. It performs the same setup as `withLogstashQueue`, but automatically adds all log messages from logging functions to the queue. A minimal example with default settings is:
+
+```haskell
+main :: IO ()
+main = do 
+    let ctx = logstashTcp def
+    withLogstashLoggerT (defaultLogstashQueueCfg ctx) (const stashJsonLine) [] $ 
         logInfoN "Hello World"
 ```

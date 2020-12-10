@@ -46,6 +46,8 @@ module Control.Monad.Logger.Logstash (
     runLogstashLoggerT,
     stashJsonLine,
 
+    withLogstashLoggerT,
+
     -- * Re-exports
     LogstashContext(..)
 ) where 
@@ -53,6 +55,9 @@ module Control.Monad.Logger.Logstash (
 --------------------------------------------------------------------------------
 
 import Control.Concurrent
+import Control.Concurrent.STM
+import Control.Concurrent.STM.TBMQueue
+import Control.Exception (Handler)
 import Control.Monad
 import Control.Monad.Logger
 import Control.Monad.Trans.Reader
@@ -62,6 +67,8 @@ import Data.Aeson
 import Data.Maybe
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
+
+import UnliftIO (MonadUnliftIO)
 
 import Logstash hiding (stashJsonLine)
 import qualified Logstash as L (stashJsonLine)
@@ -88,6 +95,24 @@ runLogstashLoggerT
 runLogstashLoggerT ctx policy time codec log = runLoggingT log $ 
     \logLoc logSource logLevel logStr -> runLogstash ctx policy time $ 
     \s -> codec s (logLoc, logSource, logLevel, logStr)
+
+-- | `withLogstashLoggerT` @cfg codec exceptionHandlers logger@ is like
+-- `withLogstashQueue` except for `LoggingT` computations so that log messages
+-- are automatically added to the queue.
+withLogstashLoggerT
+    :: (LogstashContext ctx, MonadUnliftIO m)
+    => LogstashQueueCfg ctx
+    -> ( RetryStatus -> 
+         (Loc, LogSource, LogLevel, LogStr) ->
+         ReaderT LogstashConnection IO ()
+       )
+    -> [(Loc, LogSource, LogLevel, LogStr) -> Handler ()]
+    -> LoggingT m a
+    -> m a
+withLogstashLoggerT cfg dispatch hs log = withLogstashQueue cfg dispatch hs $ 
+    \queue -> runLoggingT log $
+    \logLoc logSource logLevel logStr -> atomically $ 
+        writeTBMQueue queue (logLoc, logSource, logLevel, logStr)
 
 --------------------------------------------------------------------------------
 

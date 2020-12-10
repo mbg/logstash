@@ -25,8 +25,11 @@ dependencies:
 - logstash
 - monad-logger
 - retry
+- stm
+- stm-chans
 - text
 - transformers
+- unliftio
 
 default-extensions:
 - RecordWildCards

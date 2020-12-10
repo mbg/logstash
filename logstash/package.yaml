@@ -32,6 +32,8 @@ dependencies:
 - resource-pool
 - resourcet
 - retry
+- stm
+- stm-chans
 - time
 - tls
 - unbounded-delays
