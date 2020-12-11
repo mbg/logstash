@@ -5,6 +5,7 @@ license:             MIT
 author:              "Michael B. Gale"
 maintainer:          "m.gale@warwick.ac.uk"
 copyright:           "Copyright (c) 2020 Michael B. Gale"
+license-file:        LICENSE
 
 extra-source-files:
 - README.md
