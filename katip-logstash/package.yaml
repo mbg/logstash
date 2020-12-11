@@ -1,0 +1,40 @@
+name:                katip-logstash
+version:             0.1.0.0
+github:              "mbg/logstash"
+license:             MIT
+author:              "Michael B. Gale"
+maintainer:          "m.gale@warwick.ac.uk"
+copyright:           "Copyright (c) 2020 Michael B. Gale"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+synopsis:            Logstash backend for katip.
+category:            Logging
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/mbg/logstash#readme>
+
+dependencies:
+- aeson
+- base >= 4.7 && < 5
+- katip
+- logstash
+- retry
+- stm
+- stm-chans
+- text
+- transformers
+- unliftio
+
+default-extensions:
+- RecordWildCards
+- OverloadedStrings
+
+library:
+  source-dirs: src
+

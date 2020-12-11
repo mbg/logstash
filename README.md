@@ -152,3 +152,24 @@ main = do
     withLogstashLoggerT (defaultLogstashQueueCfg ctx) (const stashJsonLine) [] $ 
         logInfoN "Hello World"
 ```
+
+### Usage with `katip`
+
+The `katip-logstash` package provides convenience functions and types for working with [`katip`](http://hackage.haskell.org/package/katip/). 
+
+#### Asynchronous logging
+
+The `withLogstashScribe` function is the analogue of `withLogstashQueue` for `katip`. It performs the same setup as `withLogstashQueue`, but provides a `Scribe` instead of the raw queue. A minimal example with default settings is (adapted from the `katip` documentation):
+
+```haskell
+main :: IO ()
+main = do 
+    let ctx = logstashTcp def
+    withLogstashScribe (defaultLogstashQueueCfg ctx) (const $ pure True) (itemJson V3) (const stashJsonLine) [] $ \logstashScribe -> do
+        let makeLogEnv = registerScribe "logstash" logstashScribe defaultScribeSettings =<< initLogEnv "MyApp" "production"
+        bracket makeLogEnv closeScribes $ \le -> do
+            let initialContext = ()
+            let initialNamespace = "main"
+            runKatipContextT le initialContext initialNamespace $ do
+                $(logTM) InfoS "Hello World"
+```

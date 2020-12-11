@@ -1,5 +1,7 @@
 cradle:
   stack:
+    - path: './katip-logstash/src'
+      component: 'katip-logstash:lib'
     - path: './logstash/src'
       component: 'logstash:lib'
     - path: './monad-logger-logstash/src'
