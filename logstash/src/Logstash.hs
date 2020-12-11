@@ -127,6 +127,9 @@ runLogstashPool pool policy time action =
         mr <- restore (timeout time $ runInIO $ runReaderT (action s) resource) 
             `onException` destroyResource pool local resource
 
+        -- return the resource to the pool
+        putResource local resource
+
         -- raise an exception if a timeout occurred
         maybe (throw LogstashTimeout) pure mr
 
