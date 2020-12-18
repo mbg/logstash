@@ -5,17 +5,17 @@
 -- file in the root directory of this source tree.                            --
 --------------------------------------------------------------------------------
 
--- | This module implements `runLogstashLoggerT` which can be
+-- | This module implements `runLogstashLoggingT` which can be
 -- used to write log messages that arise in a `LoggingT` computation to a
 -- given `LogstashContext`. The following example demonstrates how to use the 
--- `runLogstashLoggerT` function with a TCP connection to Logstash, the
+-- `runLogstashLoggingT` function with a TCP connection to Logstash, the
 -- default retry policy from `Control.Retry`, a 1s timeout for each attempt,
 -- and the @json_lines@ codec:
 -- 
 -- > main :: IO ()
 -- > main = do 
 -- >    let ctx = logstashTcp def
--- >    runLogstashLoggerT ctx retryPolicyDefault 1000000 (const stashJsonLine) $ 
+-- >    runLogstashLoggingT ctx retryPolicyDefault 1000000 (const stashJsonLine) $ 
 -- >         logInfoN "Hello World"
 --
 -- Assuming a suitable Logstash server that can receive this message,
@@ -43,11 +43,11 @@
 -- attempted again. If all attempts fail, the most recent exception is thrown
 -- to the caller.
 module Control.Monad.Logger.Logstash (
-    runLogstashLoggerT,
+    runLogstashLoggingT,
     stashJsonLine,
 
-    withLogstashLoggerT,
-    runTBMQueueLoggerT,
+    withLogstashLoggingT,
+    runTBMQueueLoggingT,
 
     -- * Re-exports
     LogstashContext(..)
@@ -69,20 +69,20 @@ import Data.Maybe
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
 
-import UnliftIO (MonadUnliftIO)
+import UnliftIO (MonadIO(..), MonadUnliftIO)
 
 import Logstash hiding (stashJsonLine)
 import qualified Logstash as L (stashJsonLine)
 
 --------------------------------------------------------------------------------
 
--- | `runLogstashLoggerT` @context retryPolicy time codec logger@ runs a 
+-- | `runLogstashLoggingT` @context retryPolicy time codec logger@ runs a 
 -- `LoggingT` computation which writes all log entries to the Logstash 
 -- @context@ using the given @codec@. The @retryPolicy@ determines whether 
 -- and how the handler should deal with failures that arise. Each attempt
 -- that is made by the @retryPolicy@ will have a timeout of @time@
 -- microseconds applied to it. 
-runLogstashLoggerT 
+runLogstashLoggingT 
     :: LogstashContext ctx 
     => ctx 
     -> RetryPolicyM IO
@@ -93,14 +93,14 @@ runLogstashLoggerT
        )
     -> LoggingT m a 
     -> m a
-runLogstashLoggerT ctx policy time codec log = runLoggingT log $ 
+runLogstashLoggingT ctx policy time codec log = runLoggingT log $ 
     \logLoc logSource logLevel logStr -> runLogstash ctx policy time $ 
     \s -> codec s (logLoc, logSource, logLevel, logStr)
 
--- | `withLogstashLoggerT` @cfg codec exceptionHandlers logger@ is like
+-- | `withLogstashLoggingT` @cfg codec exceptionHandlers logger@ is like
 -- `withLogstashQueue` except for `LoggingT` computations so that log messages
 -- are automatically added to the queue.
-withLogstashLoggerT
+withLogstashLoggingT
     :: (LogstashContext ctx, MonadUnliftIO m)
     => LogstashQueueCfg ctx
     -> ( RetryStatus -> 
@@ -110,21 +110,37 @@ withLogstashLoggerT
     -> [(Loc, LogSource, LogLevel, LogStr) -> Handler ()]
     -> LoggingT m a
     -> m a
-withLogstashLoggerT cfg dispatch hs log = withLogstashQueue cfg dispatch hs $ 
-    \queue -> runTBMQueueLoggerT queue log
+withLogstashLoggingT cfg dispatch hs log = withLogstashQueue cfg dispatch hs $ 
+    \queue -> runTBMQueueLoggingT queue log
 
--- | `runTBMQueueLoggerT` @queue logger@ runs @logger@ so that log messages are
--- automatically added to @queue@. This can be used if the same queue and 
+-- | `runTBMQueueLoggingT` @queue logger@ runs @logger@ so that log messages
+-- are automatically added to @queue@. This can be used if the same queue and 
 -- consumer should be shared among multiple producer threads. The queue should
 -- be initialised by `withLogstashQueue`.
-runTBMQueueLoggerT 
+runTBMQueueLoggingT 
     :: MonadUnliftIO m 
     => TBMQueue (Loc, LogSource, LogLevel, LogStr)
     -> LoggingT m a
     -> m a
-runTBMQueueLoggerT queue log = runLoggingT log $
+runTBMQueueLoggingT queue log = runLoggingT log $
     \logLoc logSource logLevel logStr -> atomically $ 
         writeTBMQueue queue (logLoc, logSource, logLevel, logStr)
+
+-- | `unTBMQueueLoggingT` @queue@ is like `unChanLoggingT` but for a 
+-- `TBMQueue`. Since a `TBMQueue` can be closed, this function does not run
+-- forever like `unChanLoggingT` and will return when @queue@ is closed.
+unTBMQueueLoggingT 
+    :: (MonadIO m, MonadLogger m)
+    => TBMQueue (Loc, LogSource, LogLevel, LogStr)
+    -> m () 
+unTBMQueueLoggingT queue = do
+    mLine <- liftIO $ atomically $ readTBMQueue queue
+
+    case mLine of 
+        Nothing -> pure ()
+        Just (loc,src,lvl,msg) -> do 
+            monadLoggerLog loc src lvl msg
+            unTBMQueueLoggingT queue
 
 --------------------------------------------------------------------------------
 
