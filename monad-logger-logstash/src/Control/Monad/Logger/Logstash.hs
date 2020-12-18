@@ -48,6 +48,7 @@ module Control.Monad.Logger.Logstash (
 
     withLogstashLoggingT,
     runTBMQueueLoggingT,
+    unTBMQueueLoggingT,
 
     -- * Re-exports
     LogstashContext(..)
