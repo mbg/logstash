@@ -47,6 +47,7 @@ module Control.Monad.Logger.Logstash (
     stashJsonLine,
 
     withLogstashLoggerT,
+    runTBMQueueLoggerT,
 
     -- * Re-exports
     LogstashContext(..)
@@ -110,7 +111,18 @@ withLogstashLoggerT
     -> LoggingT m a
     -> m a
 withLogstashLoggerT cfg dispatch hs log = withLogstashQueue cfg dispatch hs $ 
-    \queue -> runLoggingT log $
+    \queue -> runTBMQueueLoggerT queue log
+
+-- | `runTBMQueueLoggerT` @queue logger@ runs @logger@ so that log messages are
+-- automatically added to @queue@. This can be used if the same queue and 
+-- consumer should be shared among multiple producer threads. The queue should
+-- be initialised by `withLogstashQueue`.
+runTBMQueueLoggerT 
+    :: MonadUnliftIO m 
+    => TBMQueue (Loc, LogSource, LogLevel, LogStr)
+    -> LoggingT m a
+    -> m a
+runTBMQueueLoggerT queue log = runLoggingT log $
     \logLoc logSource logLevel logStr -> atomically $ 
         writeTBMQueue queue (logLoc, logSource, logLevel, logStr)
 
