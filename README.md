@@ -131,13 +131,13 @@ The `monad-logger-logstash` package provides convenience functions and types for
 
 #### Synchronous logging
 
-The following example demonstrates how to use the `runLogstashLoggerT` function with a TCP connection to Logstash, the default retry policy from [`Control.Retry`](https://hackage.haskell.org/package/retry/docs/Control-Retry.html), a 1s timeout for each attempt, and the `json_lines` codec:
+The following example demonstrates how to use the `runLogstashLoggingT` function with a TCP connection to Logstash, the default retry policy from [`Control.Retry`](https://hackage.haskell.org/package/retry/docs/Control-Retry.html), a 1s timeout for each attempt, and the `json_lines` codec:
 
 ```haskell
 main :: IO ()
 main = do 
     let ctx = logstashTcp def
-    runLogstashLoggerT ctx retryPolicyDefault 1000000 (const stashJsonLine) $ 
+    runLogstashLoggingT ctx retryPolicyDefault 1000000 (const stashJsonLine) $ 
         logInfoN "Hello World"
 ```
 
@@ -145,14 +145,33 @@ Each call to a logging function such as `logInfoN` in the example will result in
 
 #### Asynchronous logging
 
-The `withLogstashLoggerT` function is the analogue of `withLogstashQueue` for `monad-logger`. It performs the same setup as `withLogstashQueue`, but automatically adds all log messages from logging functions to the queue. A minimal example with default settings is:
+The `withLogstashLoggingT` function is the analogue of `withLogstashQueue` for `monad-logger`. It performs the same setup as `withLogstashQueue`, but automatically adds all log messages from logging functions to the queue. A minimal example with default settings is:
 
 ```haskell
 main :: IO ()
 main = do 
     let ctx = logstashTcp def
-    withLogstashLoggerT (defaultLogstashQueueCfg ctx) (const stashJsonLine) [] $ 
+    withLogstashLoggingT (defaultLogstashQueueCfg ctx) (const stashJsonLine) [] $ 
         logInfoN "Hello World"
+```
+
+While `withLogstashLoggingT` is useful for scenarios where there is a single producer for which log messages should be dispatched asynchronously, we may wish to share the same queue among several producers. For such applications, the `runTBMQueueLoggingT` in combination with `withLogstashQueue` is a better fit:
+
+```haskell
+main :: IO ()
+main = do 
+    let ctx = logstashTcp def
+    let cfg = defaultLogstashQueueCfg ctx
+
+    withLogstashQueue cfg (const stashJsonLine) [] $ \queue -> do
+        thread <- async $ runTBMQueueLoggingT queue $ do
+            liftIO $ threadDelay (60*1000*1000)
+            logInfoN "I am consumer #2" 
+        
+        runTBMQueueLoggingT queue $ do 
+            logInfoN "I am consumer #1"
+
+        wait thread
 ```
 
 ### Usage with `katip`
