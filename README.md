@@ -3,12 +3,13 @@
 ![MIT](https://img.shields.io/github/license/mbg/logstash)
 ![CI](https://github.com/mbg/logstash/workflows/Build/badge.svg?branch=master)
 ![stackage-nightly](https://github.com/mbg/logstash/workflows/stackage-nightly/badge.svg)
+[![logstash](https://img.shields.io/hackage/v/logstash)](https://hackage.haskell.org/package/logstash)
 
 This library implements a client for Logstash in Haskell. The following features are currently supported:
 
 - Connections to Logstash via TCP or TLS (`tcp` input type).
 - Support for the `json_lines` codec out of the box and custom codecs can be implemented (arbitrary `ByteString` data can be sent across the connections).
-- This library can either be used without any logging framework or as a backend for [`monad-logger`](http://hackage.haskell.org/package/monad-logger/).
+- This library can either be used without any logging framework, as a backend for [`monad-logger`](http://hackage.haskell.org/package/monad-logger/), or as a backend for [`katip`](http://hackage.haskell.org/package/katip/).
 - Log messages can either be written synchronously or asynchronously.
 
 For example, to connect to a Logstash server via TCP at `127.0.0.1:5000` (configuration given by `def`) and send a JSON document synchronously with a timeout of 1s and the default retry policy from [`Control.Retry`](https://hackage.haskell.org/package/retry/docs/Control-Retry.html):
@@ -124,6 +125,7 @@ The `[]` given to `withLogstashQueue` allows installing exception handlers that 
 The queue is automatically closed when the inner computation returns. The worker threads will continue running until the queue is empty and then terminate. `withLogstashQueue` will not return until all worker threads have returned.
 
 ### Usage with `monad-logger`
+[![monad-logger-logstash](https://img.shields.io/hackage/v/monad-logger-logstash)](https://hackage.haskell.org/package/monad-logger-logstash)
 
 The `monad-logger-logstash` package provides convenience functions and types for working with [`monad-logger`](http://hackage.haskell.org/package/monad-logger/). 
 
@@ -154,6 +156,7 @@ main = do
 ```
 
 ### Usage with `katip`
+[![katip-logstash](https://img.shields.io/hackage/v/katip-logstash)](https://hackage.haskell.org/package/katip-logstash)
 
 The `katip-logstash` package provides convenience functions and types for working with [`katip`](http://hackage.haskell.org/package/katip/). 
 
