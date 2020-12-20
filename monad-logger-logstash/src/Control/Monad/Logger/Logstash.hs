@@ -45,6 +45,7 @@
 module Control.Monad.Logger.Logstash (
     runLogstashLoggingT,
     stashJsonLine,
+    jsonLogLine,
 
     withLogstashLoggingT,
     runTBMQueueLoggingT,
@@ -151,21 +152,26 @@ unTBMQueueLoggingT queue = do
 -- and sends the result to Logstash using the @json_lines@ codec.
 stashJsonLine :: (Loc, LogSource, LogLevel, LogStr) 
               -> ReaderT LogstashConnection IO ()
-stashJsonLine (logEntryLoc, logEntrySource, logEntryLevel, logEntryMessage) = 
-    L.stashJsonLine $ object 
-    [ "message" .= decodeUtf8 (fromLogStr logEntryMessage)
+stashJsonLine = L.stashJsonLine . jsonLogLine 
+    
+-- | `jsonLogLine` @entry@ serialises @entry@ as JSON using reasonable
+-- defaults for Elasticsearch based on 
+-- https://www.elastic.co/guide/en/ecs/current/ecs-field-reference.html
+jsonLogLine :: (Loc, LogSource, LogLevel, LogStr) -> Value
+jsonLogLine (loc, src, lvl, msg) = object 
+    [ "message" .= decodeUtf8 (fromLogStr msg)
     , "log" .= object 
-        [ "logger" .= logEntrySource
-        , "level" .= jsonLogLevel logEntryLevel
+        [ "logger" .= src
+        , "level" .= jsonLogLevel lvl
         , "origin" .= object 
             [ "file" .= object 
-                [ "name" .= loc_filename logEntryLoc 
-                , "line" .= fst (loc_start logEntryLoc)
+                [ "name" .= loc_filename loc 
+                , "line" .= fst (loc_start loc)
                 -- the following fields are not part of the ECS
-                , "package" .= loc_package logEntryLoc
-                , "module" .= loc_module logEntryLoc
-                , "start" .= jsonCharPos (loc_start logEntryLoc)
-                , "end" .= jsonCharPos (loc_end logEntryLoc)
+                , "package" .= loc_package loc
+                , "module" .= loc_module loc
+                , "start" .= jsonCharPos (loc_start loc)
+                , "end" .= jsonCharPos (loc_end loc)
                 ] 
             ]
         ]
