@@ -5,7 +5,7 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           monad-logger-logstash
-version:        0.2.0.1
+version:        0.2.0.2
 synopsis:       Logstash backend for monad-logger.
 description:    Please see the README on GitHub at <https://github.com/mbg/logstash#readme>
 category:       System

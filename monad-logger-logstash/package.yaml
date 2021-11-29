@@ -1,5 +1,5 @@
 name:                monad-logger-logstash
-version:             0.2.0.1
+version:             0.2.0.2
 github:              "mbg/logstash"
 license:             MIT
 author:              "Michael B. Gale"
