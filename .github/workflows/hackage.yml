@@ -27,7 +27,7 @@ jobs:
         run: |
           mkdir -p ${{ steps.install-haskell.outputs.stack-root }}
           echo "save-hackage-creds: false" >> ${{ steps.install-haskell.outputs.stack-root }}/config.yaml
-          stack upload --pvp-bounds upper ./logstash/
+          stack upload --pvp-bounds none ./logstash/
         env:
           HACKAGE_USERNAME: ${{ secrets.HACKAGE_USER }}
           HACKAGE_PASSWORD: ${{ secrets.HACKAGE_PASSWORD }}
@@ -37,7 +37,7 @@ jobs:
         run: |
           mkdir -p ${{ steps.install-haskell.outputs.stack-root }}
           echo "save-hackage-creds: false" >> ${{ steps.install-haskell.outputs.stack-root }}/config.yaml
-          stack upload --pvp-bounds upper ./katip-logstash/
+          stack upload --pvp-bounds none ./katip-logstash/
         env:
           HACKAGE_USERNAME: ${{ secrets.HACKAGE_USER }}
           HACKAGE_PASSWORD: ${{ secrets.HACKAGE_PASSWORD }}
@@ -47,7 +47,7 @@ jobs:
         run: |
           mkdir -p ${{ steps.install-haskell.outputs.stack-root }}
           echo "save-hackage-creds: false" >> ${{ steps.install-haskell.outputs.stack-root }}/config.yaml
-          stack upload --pvp-bounds upper ./monad-logger-logstash/
+          stack upload --pvp-bounds none ./monad-logger-logstash/
         env:
           HACKAGE_USERNAME: ${{ secrets.HACKAGE_USER }}
           HACKAGE_PASSWORD: ${{ secrets.HACKAGE_PASSWORD }}
