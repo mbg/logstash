@@ -1,8 +1,9 @@
-name: Build
+name: build
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master
     tags:
       - 'v*'
     paths:
@@ -15,53 +16,48 @@ on:
       - 'monad-logger-logstash/package.yaml'
       - 'stack*.yaml'
   pull_request:
-    branches: [master]
+    branches:
+      - master
 
 jobs:
-    build:
-      strategy:
-        matrix:
-          resolver:
-            - stack-lts-18
-            - stack-lts-16.1
+  build:
+    strategy:
+      matrix:
+        include:
+          - resolver: 'stack-lts-18'
+            ghc-version: '8.10.7'
+          - resolver: 'stack-lts-16.1'
+            ghc-version: '8.8.3'
 
-      runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
 
-      steps:
-      - uses: actions/checkout@v1
+    steps:
+    - uses: actions/checkout@v2
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get install libpcre3-dev
+    - name: Install system dependencies
+      run: |
+        sudo apt-get install libpcre3-dev
 
-      - name: Install the Haskell Stack
-        run: |
-          mkdir -p ~/.local/bin
-          curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+    - uses: haskell/actions/setup@v1
+      id: install-haskell
+      with:
+        ghc-version: ${{ matrix.ghc-version }}
+        enable-stack: true
+        stack-version: 'latest'
 
-      - name: Cache .stack
-        id: cache-stack
-        uses: actions/cache@v2
-        with:
-          path: ~/.stack
-          key: ${{ runner.os }}-${{ matrix.resolver }}-${{ hashFiles(format('{0}.yaml', matrix.resolver)) }}
-          restore-keys: |
-              ${{ runner.os }}-stack
-              ${{ runner.os }}
+    - name: Cache .stack
+      id: cache-stack
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.install-haskell.outputs.stack-root }}
+        key: ${{ runner.os }}-${{ matrix.resolver }}-${{ hashFiles(format('{0}.yaml', matrix.resolver)) }}
+        restore-keys: |
+            ${{ runner.os }}-stack
+            ${{ runner.os }}
 
-      - name: Install GHC
-        run: |
-          export PATH=$HOME/.local/bin:$PATH
-          stack --stack-yaml=${{ matrix.resolver }}.yaml --no-terminal --install-ghc setup
+    - name: Install dependencies
+      run: stack --system-ghc --stack-yaml=${{ matrix.resolver }}.yaml --no-terminal build --only-dependencies --fast
 
-      - name: Install dependencies
-        run: |
-          export PATH=$HOME/.local/bin:$PATH
-          stack --stack-yaml=${{ matrix.resolver }}.yaml --no-terminal build --only-dependencies --fast
-
-      - name: Build
-        id: build
-        run: |
-          export PATH=$HOME/.local/bin:$PATH
-          stack --stack-yaml=${{ matrix.resolver }}.yaml --no-terminal build --fast
-
+    - name: Build
+      id: build
+      run: stack --system-ghc --stack-yaml=${{ matrix.resolver }}.yaml --no-terminal build --fast
