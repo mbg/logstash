@@ -18,7 +18,7 @@ on:
   pull_request:
 
 jobs:
-  build:
+  dependencies:
     strategy:
       matrix:
         include:
@@ -31,10 +31,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-
-    - name: Install system dependencies
-      run: |
-        sudo apt-get install libpcre3-dev
 
     - uses: haskell/actions/setup@v1
       id: install-haskell
@@ -55,6 +51,40 @@ jobs:
 
     - name: Install dependencies
       run: stack --system-ghc --stack-yaml=${{ matrix.resolver }}.yaml --no-terminal build --only-dependencies --fast
+
+  build:
+    needs:
+      - dependencies
+
+    strategy:
+      matrix:
+        include:
+          - resolver: 'stack-lts-18'
+            ghc-version: '8.10.7'
+          - resolver: 'stack-lts-16.1'
+            ghc-version: '8.8.3'
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: haskell/actions/setup@v1
+      id: install-haskell
+      with:
+        ghc-version: ${{ matrix.ghc-version }}
+        enable-stack: true
+        stack-version: 'latest'
+
+    - name: Cache .stack
+      id: cache-stack
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.install-haskell.outputs.stack-root }}
+        key: ${{ runner.os }}-${{ matrix.resolver }}-${{ hashFiles(format('{0}.yaml', matrix.resolver)) }}
+        restore-keys: |
+            ${{ runner.os }}-stack
+            ${{ runner.os }}
 
     - name: Build
       id: build
