@@ -44,10 +44,11 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ steps.install-haskell.outputs.stack-root }}
-        key: ${{ runner.os }}-${{ matrix.resolver }}-${{ hashFiles(format('{0}.yaml', matrix.resolver)) }}
+        key: ${{ runner.os }}-${{ matrix.resolver }}-${{ hashFiles(format('{0}.yaml', matrix.resolver)) }}-${{ hashFiles('**/*.cabal') }}
         restore-keys: |
-            ${{ runner.os }}-stack
-            ${{ runner.os }}
+          ${{ runner.os }}-${{ matrix.resolver }}-${{ hashFiles(format('{0}.yaml', matrix.resolver)) }}-
+          ${{ runner.os }}-${{ matrix.resolver }}-
+          ${{ runner.os }}-
 
     - name: Install dependencies
       run: stack --system-ghc --stack-yaml=${{ matrix.resolver }}.yaml --no-terminal build --only-dependencies --fast
@@ -81,10 +82,11 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ steps.install-haskell.outputs.stack-root }}
-        key: ${{ runner.os }}-${{ matrix.resolver }}-${{ hashFiles(format('{0}.yaml', matrix.resolver)) }}
+        key: ${{ runner.os }}-${{ matrix.resolver }}-${{ hashFiles(format('{0}.yaml', matrix.resolver)) }}-${{ hashFiles('**/*.cabal') }}
         restore-keys: |
-            ${{ runner.os }}-stack
-            ${{ runner.os }}
+          ${{ runner.os }}-${{ matrix.resolver }}-${{ hashFiles(format('{0}.yaml', matrix.resolver)) }}-
+          ${{ runner.os }}-${{ matrix.resolver }}-
+          ${{ runner.os }}-
 
     - name: Build
       id: build
