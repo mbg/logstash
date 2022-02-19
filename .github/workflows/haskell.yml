@@ -3,7 +3,7 @@ name: build
 on:
   push:
     branches:
-      - master
+      - main
     tags:
       - 'v*'
     paths:
@@ -16,8 +16,6 @@ on:
       - 'monad-logger-logstash/package.yaml'
       - 'stack*.yaml'
   pull_request:
-    branches:
-      - master
 
 jobs:
   build:
