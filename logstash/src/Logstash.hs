@@ -31,6 +31,7 @@ import Control.Concurrent.STM
 import Control.Concurrent.STM.TBMQueue
 import Control.Concurrent.Timeout
 import Control.Exception
+import Control.Monad (replicateM)
 import Control.Monad.Catch (MonadMask)
 import Control.Monad.Reader
 import Control.Monad.Trans.Control
