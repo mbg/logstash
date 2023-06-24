@@ -21,21 +21,19 @@ jobs:
   dependencies:
     strategy:
       matrix:
-        include:
-          - resolver: "stack-lts-18"
-            ghc-version: "8.10.7"
-          - resolver: "stack-lts-16.1"
-            ghc-version: "8.8.3"
+        resolver:
+          - "stack-lts-18"
+          - "stack-lts-16.1"
 
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
 
-      - uses: haskell/actions/setup@v1
+      - uses: haskell/actions/setup@v2
         id: install-haskell
         with:
-          ghc-version: ${{ matrix.ghc-version }}
+          stack-no-global: true
           enable-stack: true
           stack-version: "latest"
 
@@ -59,21 +57,19 @@ jobs:
 
     strategy:
       matrix:
-        include:
-          - resolver: "stack-lts-18"
-            ghc-version: "8.10.7"
-          - resolver: "stack-lts-16.1"
-            ghc-version: "8.8.3"
+        resolver:
+          - "stack-lts-18"
+          - "stack-lts-16.1"
 
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
 
-      - uses: haskell/actions/setup@v1
+      - uses: haskell/actions/setup@v2
         id: install-haskell
         with:
-          ghc-version: ${{ matrix.ghc-version }}
+          stack-no-global: true
           enable-stack: true
           stack-version: "latest"
 
