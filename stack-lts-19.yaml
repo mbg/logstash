@@ -1,0 +1,6 @@
+resolver: lts-19.33
+
+packages:
+  - ./katip-logstash
+  - ./logstash
+  - ./monad-logger-logstash
