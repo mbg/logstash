@@ -5,16 +5,16 @@ on:
     branches:
       - main
     tags:
-      - 'v*'
+      - "v*"
     paths:
-      - '.github/workflows/**'
-      - 'katip-logstash/src/**'
-      - 'katip-logstash/package.yaml'
-      - 'logstash/src/**'
-      - 'logstash/package.yaml'
-      - 'monad-logger-logstash/src/**'
-      - 'monad-logger-logstash/package.yaml'
-      - 'stack*.yaml'
+      - ".github/workflows/**"
+      - "katip-logstash/src/**"
+      - "katip-logstash/package.yaml"
+      - "logstash/src/**"
+      - "logstash/package.yaml"
+      - "monad-logger-logstash/src/**"
+      - "monad-logger-logstash/package.yaml"
+      - "stack*.yaml"
   pull_request:
 
 jobs:
@@ -22,36 +22,36 @@ jobs:
     strategy:
       matrix:
         include:
-          - resolver: 'stack-lts-18'
-            ghc-version: '8.10.7'
-          - resolver: 'stack-lts-16.1'
-            ghc-version: '8.8.3'
+          - resolver: "stack-lts-18"
+            ghc-version: "8.10.7"
+          - resolver: "stack-lts-16.1"
+            ghc-version: "8.8.3"
 
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - uses: haskell/actions/setup@v2
-      id: install-haskell
-      with:
-        ghc-version: ${{ matrix.ghc-version }}
-        enable-stack: true
-        stack-version: 'latest'
+      - uses: haskell/actions/setup@v1
+        id: install-haskell
+        with:
+          ghc-version: ${{ matrix.ghc-version }}
+          enable-stack: true
+          stack-version: "latest"
 
-    - name: Cache .stack
-      id: cache-stack
-      uses: actions/cache@v3.3.1
-      with:
-        path: ${{ steps.install-haskell.outputs.stack-root }}
-        key: ${{ runner.os }}-${{ matrix.resolver }}-${{ hashFiles(format('{0}.yaml', matrix.resolver)) }}-${{ hashFiles('**/*.cabal') }}
-        restore-keys: |
-          ${{ runner.os }}-${{ matrix.resolver }}-${{ hashFiles(format('{0}.yaml', matrix.resolver)) }}-
-          ${{ runner.os }}-${{ matrix.resolver }}-
-          ${{ runner.os }}-
+      - name: Cache .stack
+        id: cache-stack
+        uses: actions/cache@v3.3.1
+        with:
+          path: ${{ steps.install-haskell.outputs.stack-root }}
+          key: ${{ runner.os }}-${{ matrix.resolver }}-${{ hashFiles(format('{0}.yaml', matrix.resolver)) }}-${{ hashFiles('**/*.cabal') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.resolver }}-${{ hashFiles(format('{0}.yaml', matrix.resolver)) }}-
+            ${{ runner.os }}-${{ matrix.resolver }}-
+            ${{ runner.os }}-
 
-    - name: Install dependencies
-      run: stack --system-ghc --stack-yaml=${{ matrix.resolver }}.yaml --no-terminal build --only-dependencies --fast
+      - name: Install dependencies
+        run: stack --system-ghc --stack-yaml=${{ matrix.resolver }}.yaml --no-terminal build --only-dependencies --fast
 
   build:
     needs:
@@ -60,34 +60,34 @@ jobs:
     strategy:
       matrix:
         include:
-          - resolver: 'stack-lts-18'
-            ghc-version: '8.10.7'
-          - resolver: 'stack-lts-16.1'
-            ghc-version: '8.8.3'
+          - resolver: "stack-lts-18"
+            ghc-version: "8.10.7"
+          - resolver: "stack-lts-16.1"
+            ghc-version: "8.8.3"
 
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - uses: haskell/actions/setup@v2
-      id: install-haskell
-      with:
-        ghc-version: ${{ matrix.ghc-version }}
-        enable-stack: true
-        stack-version: 'latest'
+      - uses: haskell/actions/setup@v1
+        id: install-haskell
+        with:
+          ghc-version: ${{ matrix.ghc-version }}
+          enable-stack: true
+          stack-version: "latest"
 
-    - name: Cache .stack
-      id: cache-stack
-      uses: actions/cache@v3.3.1
-      with:
-        path: ${{ steps.install-haskell.outputs.stack-root }}
-        key: ${{ runner.os }}-${{ matrix.resolver }}-${{ hashFiles(format('{0}.yaml', matrix.resolver)) }}-${{ hashFiles('**/*.cabal') }}
-        restore-keys: |
-          ${{ runner.os }}-${{ matrix.resolver }}-${{ hashFiles(format('{0}.yaml', matrix.resolver)) }}-
-          ${{ runner.os }}-${{ matrix.resolver }}-
-          ${{ runner.os }}-
+      - name: Cache .stack
+        id: cache-stack
+        uses: actions/cache@v3.3.1
+        with:
+          path: ${{ steps.install-haskell.outputs.stack-root }}
+          key: ${{ runner.os }}-${{ matrix.resolver }}-${{ hashFiles(format('{0}.yaml', matrix.resolver)) }}-${{ hashFiles('**/*.cabal') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.resolver }}-${{ hashFiles(format('{0}.yaml', matrix.resolver)) }}-
+            ${{ runner.os }}-${{ matrix.resolver }}-
+            ${{ runner.os }}-
 
-    - name: Build
-      id: build
-      run: stack --system-ghc --stack-yaml=${{ matrix.resolver }}.yaml --no-terminal build --fast
+      - name: Build
+        id: build
+        run: stack --system-ghc --stack-yaml=${{ matrix.resolver }}.yaml --no-terminal build --fast
