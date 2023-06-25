@@ -1,7 +1,7 @@
 # Haskell client library for Logstash
 
 ![MIT](https://img.shields.io/github/license/mbg/logstash)
-![CI](https://github.com/mbg/logstash/workflows/Build/badge.svg?branch=master)
+![CI](https://github.com/mbg/logstash/actions/workflows/haskell.yml/badge.svg?branch=main)
 ![stackage-nightly](https://github.com/mbg/logstash/workflows/stackage-nightly/badge.svg)
 [![logstash](https://img.shields.io/hackage/v/logstash)](https://hackage.haskell.org/package/logstash)
 
