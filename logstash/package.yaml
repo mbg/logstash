@@ -1,51 +1,50 @@
-name:                logstash
-version:             0.1.0.3
-github:              "mbg/logstash"
-license:             MIT
-author:              "Michael B. Gale"
-maintainer:          "github@michael-gale.co.uk"
-copyright:           "Copyright (c) 2021 Michael B. Gale"
-license-file:        LICENSE
+name: logstash
+version: 0.1.0.3
+github: "mbg/logstash"
+license: MIT
+author: "Michael B. Gale"
+maintainer: "github@michael-gale.co.uk"
+copyright: "Copyright (c) 2021 Michael B. Gale"
+license-file: LICENSE
 
 extra-source-files:
-- README.md
-- ChangeLog.md
+  - README.md
+  - ChangeLog.md
 
 # Metadata used when publishing your package
-synopsis:            Logstash client library for Haskell
-category:            Network
+synopsis: Logstash client library for Haskell
+category: Network
 
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/mbg/logstash#readme>
+description: Please see the README on GitHub at <https://github.com/mbg/logstash#readme>
 
 dependencies:
-- aeson
-- async
-- base >= 4.7 && < 5
-- bytestring
-- data-default-class
-- exceptions
-- monad-control
-- mtl
-- network
-- resource-pool
-- resourcet
-- retry
-- stm
-- stm-chans
-- time
-- tls
-- unbounded-delays
-- unliftio
+  - aeson
+  - async
+  - base >= 4.7 && < 5
+  - bytestring
+  - data-default-class
+  - exceptions
+  - monad-control
+  - mtl
+  - network
+  - resource-pool
+  - resourcet
+  - retry
+  - stm
+  - stm-chans
+  - time
+  - tls
+  - unbounded-delays
+  - unliftio
 
 default-extensions:
-- OverloadedStrings
-- RecordWildCards
-- FlexibleContexts
-- FlexibleInstances
+  - OverloadedStrings
+  - RecordWildCards
+  - FlexibleContexts
+  - FlexibleInstances
 
 library:
   source-dirs: src
-
