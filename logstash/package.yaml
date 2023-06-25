@@ -1,5 +1,5 @@
 name: logstash
-version: 0.1.0.3
+version: 0.1.0.4
 github: "mbg/logstash"
 license: MIT
 author: "Michael B. Gale"

@@ -1,11 +1,11 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.4.
+-- This file has been generated from package.yaml by hpack version 0.35.1.
 --
 -- see: https://github.com/sol/hpack
 
 name:           logstash
-version:        0.1.0.3
+version:        0.1.0.4
 synopsis:       Logstash client library for Haskell
 description:    Please see the README on GitHub at <https://github.com/mbg/logstash#readme>
 category:       Network
