@@ -45,7 +45,7 @@ input {
         ssl_cert => "/usr/share/logstash/tls/cert.pem"
         ssl_key => "/usr/share/logstash/tls/key.pem"
         ssl_key_passphrase => "foobar"
-        ssl_enable => true 
+        ssl_enable => true
         ssl_verify => false
         codec => "json_lines"
     }
@@ -65,16 +65,16 @@ For `logstashTls` and `logstashTlsPool`, TLS `ClientParams` are required. It is 
 
 ```haskell
 main :: IO ()
-main = do 
+main = do
     params <- newDefaultClientParams ("127.0.0.1", "")
 
-    runLogstashConn (logstashTls def params) retryPolicyDefault 1000000 $ 
+    runLogstashConn (logstashTls def params) retryPolicyDefault 1000000 $
         stashJsonLine myDocument
 ```
 
 ## Logging things
 
-The `Logstash` module exports functions for synchronous and asynchronous logging. Synchronous logging is acceptable for applications or parts of applications that are largely single-threaded where blocking on writes to Logstash is not an issue. For multi-threaded applications, such as web applications or services, you may wish to write log messages to Logstash asynchronously instead. In the latter model, log messages are added to a bounded queue which is processed asynchronously by worker threads. 
+The `Logstash` module exports functions for synchronous and asynchronous logging. Synchronous logging is acceptable for applications or parts of applications that are largely single-threaded where blocking on writes to Logstash is not an issue. For multi-threaded applications, such as web applications or services, you may wish to write log messages to Logstash asynchronously instead. In the latter model, log messages are added to a bounded queue which is processed asynchronously by worker threads.
 
 ### Synchronously
 
@@ -97,7 +97,7 @@ Depending on whether the Logstash context is a `Acquire LogstashConnection` valu
 The following functions allow sending data synchronously via the Logstash connection:
 
 - `stash` is a general-purpose function for sending `ByteString` data to the server. No further processing is performed on the data.
-- `stashJsonLine` is for use with the `json_line` codec. The argument is encoded as JSON and a `\n` character is appended, which is then sent to the server. 
+- `stashJsonLine` is for use with the `json_line` codec. The argument is encoded as JSON and a `\n` character is appended, which is then sent to the server.
 
 Any exception raised by the above `stash`ing functions will likely be due to a bad connection. The `runLogstash` functions apply the retry policy before establishing a connection, so in the event that an exception is raised, a new connection will be established for the next attempt.
 
@@ -115,7 +115,7 @@ main :: IO ()
 main = do
     let ctx = logstashTcp def
     let cfg = defaultLogstashQueueCfg ctx
-    
+
     withLogstashQueue cfg (const stashJsonLine) [] $ \queue -> do
         atomically $ writeTBMQueue queue (Doc "Hello World")
 ```
@@ -127,7 +127,7 @@ The queue is automatically closed when the inner computation returns. The worker
 ### Usage with `monad-logger`
 [![monad-logger-logstash](https://img.shields.io/hackage/v/monad-logger-logstash)](https://hackage.haskell.org/package/monad-logger-logstash)
 
-The `monad-logger-logstash` package provides convenience functions and types for working with [`monad-logger`](http://hackage.haskell.org/package/monad-logger/). 
+The `monad-logger-logstash` package provides convenience functions and types for working with [`monad-logger`](http://hackage.haskell.org/package/monad-logger/).
 
 #### Synchronous logging
 
@@ -135,13 +135,13 @@ The following example demonstrates how to use the `runLogstashLoggingT` function
 
 ```haskell
 main :: IO ()
-main = do 
+main = do
     let ctx = logstashTcp def
-    runLogstashLoggingT ctx retryPolicyDefault 1000000 (const stashJsonLine) $ 
+    runLogstashLoggingT ctx retryPolicyDefault 1000000 (const stashJsonLine) $
         logInfoN "Hello World"
 ```
 
-Each call to a logging function such as `logInfoN` in the example will result in the log message being written to Logstash synchronously. 
+Each call to a logging function such as `logInfoN` in the example will result in the log message being written to Logstash synchronously.
 
 #### Asynchronous logging
 
@@ -149,9 +149,9 @@ The `withLogstashLoggingT` function is the analogue of `withLogstashQueue` for `
 
 ```haskell
 main :: IO ()
-main = do 
+main = do
     let ctx = logstashTcp def
-    withLogstashLoggingT (defaultLogstashQueueCfg ctx) (const stashJsonLine) [] $ 
+    withLogstashLoggingT (defaultLogstashQueueCfg ctx) (const stashJsonLine) [] $
         logInfoN "Hello World"
 ```
 
@@ -159,16 +159,16 @@ While `withLogstashLoggingT` is useful for scenarios where there is a single pro
 
 ```haskell
 main :: IO ()
-main = do 
+main = do
     let ctx = logstashTcp def
     let cfg = defaultLogstashQueueCfg ctx
 
     withLogstashQueue cfg (const stashJsonLine) [] $ \queue -> do
         thread <- async $ runTBMQueueLoggingT queue $ do
             liftIO $ threadDelay (60*1000*1000)
-            logInfoN "I am consumer #2" 
-        
-        runTBMQueueLoggingT queue $ do 
+            logInfoN "I am consumer #2"
+
+        runTBMQueueLoggingT queue $ do
             logInfoN "I am consumer #1"
 
         wait thread
@@ -177,7 +177,7 @@ main = do
 ### Usage with `katip`
 [![katip-logstash](https://img.shields.io/hackage/v/katip-logstash)](https://hackage.haskell.org/package/katip-logstash)
 
-The `katip-logstash` package provides convenience functions and types for working with [`katip`](http://hackage.haskell.org/package/katip/). 
+The `katip-logstash` package provides convenience functions and types for working with [`katip`](http://hackage.haskell.org/package/katip/).
 
 #### Asynchronous logging
 
@@ -185,7 +185,7 @@ The `withLogstashScribe` function is the analogue of `withLogstashQueue` for `ka
 
 ```haskell
 main :: IO ()
-main = do 
+main = do
     let ctx = logstashTcp def
     withLogstashScribe (defaultLogstashQueueCfg ctx) (const $ pure True) (itemJson V3) (const stashJsonLine) [] $ \logstashScribe -> do
         let makeLogEnv = registerScribe "logstash" logstashScribe defaultScribeSettings =<< initLogEnv "MyApp" "production"
