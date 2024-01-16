@@ -42,7 +42,7 @@ jobs:
 
       - name: Cache .stack
         id: cache-stack
-        uses: actions/cache@v3.3.3
+        uses: actions/cache@v4.0.0
         with:
           path: ${{ steps.install-haskell.outputs.stack-root }}
           key: ${{ runner.os }}-${{ matrix.resolver }}-${{ hashFiles(format('{0}.yaml', matrix.resolver)) }}-${{ hashFiles('**/*.cabal') }}
@@ -80,7 +80,7 @@ jobs:
 
       - name: Cache .stack
         id: cache-stack
-        uses: actions/cache@v3.3.3
+        uses: actions/cache@v4.0.0
         with:
           path: ${{ steps.install-haskell.outputs.stack-root }}
           key: ${{ runner.os }}-${{ matrix.resolver }}-${{ hashFiles(format('{0}.yaml', matrix.resolver)) }}-${{ hashFiles('**/*.cabal') }}
