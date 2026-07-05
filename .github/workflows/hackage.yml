@@ -3,24 +3,28 @@ name: hackage
 on:
   push:
     tags:
-      - 'logstash-*'
-      - 'katip-logstash-*'
-      - 'monad-logger-logstash-*'
+      - "logstash-*"
+      - "katip-logstash-*"
+      - "monad-logger-logstash-*"
 
 jobs:
   publish-to-hackage:
-    name: 'Publish to Hackage'
+    name: "Publish to Hackage"
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+
     steps:
-      - uses: actions/checkout@v6
+      - name: "Checkout repository"
+        uses: actions/checkout@v6
 
       - uses: haskell/actions/setup@v2
         id: install-haskell
         with:
           stack-no-global: true
           enable-stack: true
-          stack-version: 'latest'
+          stack-version: "latest"
 
       - name: Publish `logstash`
         if: startsWith(github.ref, 'refs/tags/logstash-')

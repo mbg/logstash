@@ -30,8 +30,12 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+
     steps:
-      - uses: actions/checkout@v6
+      - name: "Checkout repository"
+        uses: actions/checkout@v6
 
       - uses: haskell/actions/setup@v2
         id: install-haskell
@@ -69,7 +73,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - name: "Checkout repository"
+        uses: actions/checkout@v6
 
       - uses: haskell/actions/setup@v2
         id: install-haskell
