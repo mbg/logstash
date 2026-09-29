@@ -21,4 +21,4 @@ jobs:
       - name: "Checkout repository"
         uses: actions/checkout@v7
 
-      - uses: mbg/actions/stack/nightly@v0.3
+      - uses: mbg/actions/stack/nightly@v0.4
